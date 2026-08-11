@@ -37,14 +37,15 @@ def load_and_clean():
     df = pd.read_csv(
         TXT_PATH,
         sep=";",
-        parse_dates={"datetime": ["Date", "Time"]},
-        infer_datetime_format=True,
         na_values=["?"],
         low_memory=False,
     )
 
     df = df.dropna(subset=["Global_active_power"])
     df["Global_active_power"] = df["Global_active_power"].astype(float)
+    df["datetime"] = pd.to_datetime(
+        df["Date"] + " " + df["Time"], format="%d/%m/%Y %H:%M:%S"
+    )
     df["date"] = df["datetime"].dt.date
 
     # Aggregate to daily totals — this is the level anomaly detection will run on
