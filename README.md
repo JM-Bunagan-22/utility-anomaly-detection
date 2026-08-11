@@ -12,7 +12,9 @@ Utility companies lose significant revenue to non-technical losses: meter tamper
 4. **Visualization**: Interactive Dash dashboard showing consumption trends with flagged anomalies highlighted, so a reviewer can see *why* a period was flagged.
 
 ## Result
-*(Fill in once you've run it — e.g. "Flagged X% of periods as anomalous; Isolation Forest caught sudden drop patterns consistent with tampering that simple thresholds missed.")*
+Analyzed 1,433 days of household electricity consumption. The rolling z-score method (threshold 2.5σ) flagged **0 days** as anomalous, while Isolation Forest flagged **72 days (~5%)** — consistent with its configured contamination rate. The two methods didn't agree on any single day, revealing a key limitation: z-score thresholds only catch large deviations from a *recent* rolling average, so they miss gradual seasonal shifts and multi-day drift patterns. Isolation Forest instead looks across all engineered features simultaneously (day-over-day change, load factor, weekend behavior), catching subtler multivariate anomalies a single-variable threshold overlooks entirely. This mirrors a real tradeoff in fraud/anomaly detection systems: simple rule-based flags are transparent and fast, but under-flag; ML models catch more but need review by an analyst before acting on the score alone.
+
+![Dashboard screenshot](assets/dashboard.png)
 
 ## Stack
 Python · pandas · scikit-learn · Dash · Plotly
@@ -42,6 +44,7 @@ python src/dashboard.py         # launches Dash app at localhost:8050
 ```
 
 ## Next Steps
-- [ ] Add screenshot of dashboard here
+- [x] Add screenshot of dashboard here
+- [ ] Investigate why z-score and Isolation Forest disagree — tune z-score threshold and inspect a sample of the 72 flagged days
 - [ ] Compare model performance against a labeled anomaly set (if available)
 - [ ] Extend to multiple households / accounts for a portfolio-level view
