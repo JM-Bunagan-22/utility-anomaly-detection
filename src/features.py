@@ -8,9 +8,13 @@ import pandas as pd
 def build_features(daily: pd.DataFrame) -> pd.DataFrame:
     df = daily.copy()
 
-    # Rolling behavior — captures gradual drift vs. sudden change
-    df["rolling_mean_7d"] = df["total_kwh"].rolling(window=7, min_periods=1).mean()
-    df["rolling_std_7d"] = df["total_kwh"].rolling(window=7, min_periods=1).std().fillna(0)
+    # Rolling behavior — captures gradual drift vs. sudden change.
+    # Shifted by one day so a day's own value never leaks into its baseline;
+    # otherwise a spike inflates the mean/std used to judge that same spike,
+    # dampening its z-score and causing outliers to hide from the threshold.
+    prior = df["total_kwh"].shift(1)
+    df["rolling_mean_7d"] = prior.rolling(window=7, min_periods=1).mean()
+    df["rolling_std_7d"] = prior.rolling(window=7, min_periods=1).std().fillna(0)
 
     # Deviation from recent normal — the core anomaly signal
     df["pct_change_from_rolling"] = (

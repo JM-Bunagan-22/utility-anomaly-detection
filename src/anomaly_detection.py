@@ -21,9 +21,19 @@ ISOLATION_FOREST_CONTAMINATION = 0.05  # assume ~5% of days are anomalous
 
 
 def flag_zscore(df: pd.DataFrame) -> pd.DataFrame:
-    z = (df["total_kwh"] - df["rolling_mean_7d"]) / df["rolling_std_7d"].replace(0, pd.NA)
+    mean = df["rolling_mean_7d"]
+    std = df["rolling_std_7d"]
+    deviation = df["total_kwh"] - mean
+
+    z = deviation / std.replace(0, pd.NA)
     df["zscore"] = z.fillna(0)
-    df["flag_zscore"] = df["zscore"].abs() > Z_SCORE_THRESHOLD
+
+    # A perfectly flat rolling baseline (std == 0) makes the ratio above
+    # undefined, and it fell back to 0 — silently un-flagging a day that
+    # deviates from an otherwise constant baseline, which is anomalous by
+    # definition. Flag those explicitly instead of relying on the ratio.
+    zero_std_deviation = (std == 0) & (deviation != 0) & mean.notna()
+    df["flag_zscore"] = (df["zscore"].abs() > Z_SCORE_THRESHOLD) | zero_std_deviation
     return df
 
 
